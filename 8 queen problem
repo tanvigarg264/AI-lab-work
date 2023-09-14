@@ -1,0 +1,83 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <queue>
+
+using namespace std;
+
+// Define the state representation
+// Each state is a vector where the index represents the row and the value represents the column of the queen in that row.
+// For example, state[0] = 3 means there's a queen in the first row, third column.
+typedef vector<int> State;
+
+// Define a struct to represent a node in the search tree
+struct Node {
+    State state;
+    int cost; // The cost function for A* (heuristic + path cost)
+};
+
+// Define a function to check if a queen placement is valid
+bool isValid(const State& state, int row, int col) {
+    for (int i = 0; i < row; ++i) {
+        if (state[i] == col || abs(state[i] - col) == abs(i - row)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Define the heuristic function (number of conflicts)
+int heuristic(const State& state) {
+    int conflicts = 0;
+    int n = state.size();
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            if (state[i] == state[j] || abs(state[i] - state[j]) == abs(i - j)) {
+                conflicts++;
+            }
+        }
+    }
+    return conflicts;
+}
+
+// Define the A* algorithm
+bool solveNQueens(int n) {
+    priority_queue<Node, vector<Node>, greater<Node>> openSet;
+    State initial(n, -1); // Initialize all queens in the same row
+    openSet.push({initial, 0});
+
+    while (!openSet.empty()) {
+        Node node = openSet.top();
+        openSet.pop();
+
+        State current = node.state;
+        int row = node.cost;
+
+        if (row == n) { // All queens are placed
+            for (int i = 0; i < n; ++i) {
+                cout << current[i] << " ";
+            }
+            cout << endl;
+            return true;
+        }
+
+        for (int col = 0; col < n; ++col) {
+            if (isValid(current, row, col)) {
+                State child = current;
+                child[row] = col;
+                int h = heuristic(child);
+                openSet.push({child, row + 1 + h});
+            }
+        }
+    }
+
+    return false; // No solution found
+}
+
+int main() {
+    int n = 8; // Change this to solve for different board sizes
+    if (!solveNQueens(n)) {
+        cout << "No solution found." << endl;
+    }
+    return 0;
+}
