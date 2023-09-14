@@ -1,0 +1,81 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <map>
+#include <algorithm>
+
+using namespace std;
+
+// Define the State structure
+struct State {
+    int monkeyX, monkeyY;  // Monkey's position
+    int bananaX, bananaY;  // Banana's position
+
+    State(int mx, int my, int bx, int by)
+        : monkeyX(mx), monkeyY(my), bananaX(bx), bananaY(by) {}
+
+    // Define comparison operator for sorting in priority queue
+    bool operator<(const State& other) const {
+        // Customize this to compare states based on their estimated costs (f-values)
+        // For simplicity, let's assume lower values are better.
+        return false;
+    }
+};
+
+// Define the Heuristic function (Manhattan distance)
+int heuristic(const State& state) {
+    return abs(state.monkeyX - state.bananaX) + abs(state.monkeyY - state.bananaY);
+}
+
+// Define actions (e.g., move left, move right, climb, etc.)
+vector<pair<int, int>> actions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+// Define the AO* search function
+void AOStarSearch(const State& initialState) {
+    priority_queue<State> openList;
+    map<State, int> gValues;
+
+    openList.push(initialState);
+    gValues[initialState] = 0;
+
+    while (!openList.empty()) {
+        State current = openList.top();
+        openList.pop();
+
+        if (current.monkeyX == current.bananaX && current.monkeyY == current.bananaY) {
+            // Goal state reached
+            cout << "Monkey reached the banana!" << endl;
+            return;
+        }
+
+        for (const auto& action : actions) {
+            int newX = current.monkeyX + action.first;
+            int newY = current.monkeyY + action.second;
+
+            // Check if the new position is valid (within the room bounds)
+            if (newX >= 0 && newX < roomWidth && newY >= 0 && newY < roomHeight) {
+                State successor(newX, newY, current.bananaX, current.bananaY);
+                int newCost = gValues[current] + 1; // Assuming constant cost for each action
+
+                if (!gValues.count(successor) || newCost < gValues[successor]) {
+                    // This is a new state or a better path to an existing state
+                    gValues[successor] = newCost;
+                    int fValue = newCost + heuristic(successor);
+                    openList.push(successor);
+                }
+            }
+        }
+    }
+
+    cout << "No solution found!" << endl;
+}
+
+int main() {
+    // Define the initial state and goal state
+    State initialState(0, 0, 4, 4); // Example room size is 5x5
+
+    // Call AO* search with the initial state
+    AOStarSearch(initialState);
+
+    return 0;
+}
