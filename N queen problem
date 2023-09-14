@@ -1,58 +1,75 @@
 #include <iostream>
 #include <vector>
+#include <queue>
+#include <algorithm>
 
 using namespace std;
 
-bool isSafe(vector<vector<int>>& board, int row, int col, int N) {
-    // Check if there's a queen in the same column
-    for (int i = 0; i < row; ++i) {
-        if (board[i][col] == 1)
-            return false;
-    }
+struct State {
+    vector<int> queens;
+    int totalConflicts;
+};
 
-    // Check upper left diagonal
-    for (int i = row, j = col; i >= 0 && j >= 0; --i, --j) {
-        if (board[i][j] == 1)
+bool isSafe(int row, int col, const vector<int>& queens) {
+    for (int prevRow = 0; prevRow < row; ++prevRow) {
+        if (queens[prevRow] == col || abs(queens[prevRow] - col) == abs(prevRow - row)) {
             return false;
+        }
     }
-
-    // Check upper right diagonal
-    for (int i = row, j = col; i >= 0 && j < N; --i, ++j) {
-        if (board[i][j] == 1)
-            return false;
-    }
-
     return true;
 }
 
-bool solveNQueensUtil(vector<vector<int>>& board, int row, int N) {
-    if (row == N) {
-        // Print the board
-        for (int i = 0; i < N; ++i) {
-            for (int j = 0; j < N; ++j) {
-                cout << (board[i][j] ? "Q " : ". ");
+int calculateConflicts(const vector<int>& queens) {
+    int conflicts = 0;
+    int N = queens.size();
+    for (int i = 0; i < N; ++i) {
+        for (int j = i + 1; j < N; ++j) {
+            if (queens[i] == queens[j] || abs(queens[i] - queens[j]) == abs(i - j)) {
+                conflicts++;
             }
-            cout << "\n";
-        }
-        cout << "\n";
-        return true; // Solution found
-    }
-
-    bool found = false;
-    for (int col = 0; col < N; ++col) {
-        if (isSafe(board, row, col, N)) {
-            board[row][col] = 1;
-            found = solveNQueensUtil(board, row + 1, N) || found;
-            board[row][col] = 0; // Backtrack
         }
     }
-    return found;
+    return conflicts;
 }
 
-void solveNQueens(int N) {
-    vector<vector<int>> board(N, vector<int>(N, 0));
-    if (!solveNQueensUtil(board, 0, N)) {
-        cout << "No solution exists.\n";
+struct CompareStates {
+    bool operator()(const State& s1, const State& s2) {
+        return s1.totalConflicts > s2.totalConflicts;
+    }
+};
+
+void solveNQueensAStar(int N) {
+    priority_queue<State, vector<State>, CompareStates> pq;
+
+    State initial;
+    initial.queens.resize(N);
+    initial.totalConflicts = 0;
+    pq.push(initial);
+
+    while (!pq.empty()) {
+        State current = pq.top();
+        pq.pop();
+
+        if (current.queens.size() == N) {
+            // Found a solution
+            for (int col : current.queens) {
+                for (int i = 0; i < N; ++i) {
+                    cout << (i == col ? "Q " : ". ");
+                }
+                cout << "\n";
+            }
+            cout << "\n";
+        } else {
+            int row = current.queens.size();
+            for (int col = 0; col < N; ++col) {
+                if (isSafe(row, col, current.queens)) {
+                    State successor = current;
+                    successor.queens.push_back(col);
+                    successor.totalConflicts = calculateConflicts(successor.queens);
+                    pq.push(successor);
+                }
+            }
+        }
     }
 }
 
@@ -60,6 +77,6 @@ int main() {
     int N;
     cout << "Enter the value of N: ";
     cin >> N;
-    solveNQueens(N);
+    solveNQueensAStar(N);
     return 0;
 }
